@@ -1,0 +1,16 @@
+<?php
+
+require_once "Command.interface.php";
+
+/**
+ * The view VM command encapsulates of the logic for the
+ * remote virtual machine connection (vMoodleS02) use case.
+ */
+class viewVM_cmd implements Command
+{
+	/**
+	 * Executes remote virtual machine connection use case logic.
+	 */
+	public function execute() {
+	}
+}

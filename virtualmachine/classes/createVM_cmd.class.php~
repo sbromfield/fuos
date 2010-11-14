@@ -1,0 +1,48 @@
+<?php
+
+require_once "Command.interface.php";
+
+/**
+ * The create VM command encapsulates of the logic for the
+ * create Virtual Machine (vMoodleI01) use case.
+ */
+class createVM_cmd implements Command
+{
+	/**
+	 * Executes create Virtual Machine use case logic.
+	 */
+	public function execute() {
+//		include "create_vm.php";exit();
+
+		if($_SERVER['REQUEST_METHOD'] == "GET")
+		{
+			$this->getForm();
+		}
+		else
+		{
+			$this->createVM();
+		}
+	}
+	
+	private function getForm()
+	{
+		$course = verify_access_and_get_course();
+
+		$coursecontext = get_context_instance(CONTEXT_COURSE, $course->id);
+
+		$navlinks = array();
+		$navlinks[] = array('name' => "Virtual Machines", 'link' => '', 'type' => 'activity');
+
+		require_capability('moodle/legacy:editingteacher', $coursecontext);
+
+		require_once("createVM_Page.class.php");
+		$page = new createVM_Page();
+		$page->display();
+
+	}
+	
+	private function createVM()
+	{
+		echo "A";
+	}
+}

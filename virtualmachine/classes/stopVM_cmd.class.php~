@@ -1,0 +1,26 @@
+<?php
+
+require_once "Command.interface.php";
+
+/**
+ * The stop VM command encapsulates of the logic for the
+ * stop Virtual Machine (vMoodleS05) use case.
+ */
+class stopVM_cmd implements Command
+{
+	/**
+	 * Executes stop Virtual Machine use case logic.
+	 */
+	public function execute() {
+		require_once("classes/ssh/Net/SSH2.php");
+
+		$ssh = new Net_SSH2('localhost');
+		if (!$ssh->login('teamfuos', 'winteriscoming')) {
+		    exit('Login Failed');
+		}
+
+		$output = nl2br($ssh->exec('VBoxManage controlvm Arch poweroff'));
+		
+		header("?a=listVM&id=" . $_GET['id']);
+	}
+}
