@@ -80,9 +80,10 @@ class createVM_cmd implements Command
 		}
 		
 		/**
-		 * Form created successfully, redirect to the Virtual Machine remote
-		 * console.
+		 * Virtual Machine created successfully. Start virtual machine and
+		 * redirect to the Virtual Machine remote console.
 		 */
+		$cm->start($vm_id);
 		header("Location: " . $CFG->wwwroot . "/mod/virtualmachine/?a=viewVM&id={$COURSE->id}&vm={$vm_id}");
 		exit();
 	}

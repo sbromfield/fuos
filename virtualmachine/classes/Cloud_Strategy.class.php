@@ -29,7 +29,9 @@ abstract class Cloud_Strategy implements ICloud_Strategy
 	 * Logic for starting a Virtual Machine
 	 */
 	public function start($vm_id) {
-		require_once("dsFacade.class.php");
+		/**
+		 * Update Virtual Machine's state to RUNNING.
+		 */
 		$ds = new dsFacade();
 		$vm = new stdclass;
 		$vm->id = $vm_id;
@@ -41,7 +43,9 @@ abstract class Cloud_Strategy implements ICloud_Strategy
 	 * Logic for stoping a Virtual Machine
 	 */
 	public function stop($vm_id) {
-		require_once("dsFacade.class.php");
+		/**
+		 * Update Virtual Machine's state to HALTED.
+		 */
 		$ds = new dsFacade();
 		$vm = new stdclass;
 		$vm->id = $vm_id;
@@ -67,19 +71,29 @@ abstract class Cloud_Strategy implements ICloud_Strategy
 	public function create() {
 		global $USER;
 
+		/**
+		 * Verify that all the form parameters are present and validate
+		 * successfully.
+		 * Name (vmName): has to be alpha numeric and have a length greater than
+		 * zero.
+		 * Cloud (cloud): has to be numeric and has to exist in the database.
+		 */
 		$errors = array();
+		$ds = new dsFacade();
 		if(!ctype_alnum($_POST['vmName']) && strlen($_POST['vmName']) <= 0)
 		{
 			$errors[] = "Please enter a name";
 		}
 		
-		require_once('dsFacade.class.php');
-		$ds = new dsFacade();
 		if(!(is_numeric($_POST['cloud']) && $ds->selectCloud($_POST['cloud'])))
 		{
 			$errors[] = "Please select valid cloud.";
 		}
 		
+		/**
+		 * If no errors have been identified, then insert the Virtual Machine 
+		 * into the database.
+		 */
 		$vm_id = 0;
 		if(!count($errors))
 		{
@@ -91,7 +105,7 @@ abstract class Cloud_Strategy implements ICloud_Strategy
 			$vm_id = $ds->insertVM($vm);
 		}
 		
-		return array('vm_id' => $vm_id, 'errors' => $errors);
+		return array($errors, $vm_id);
 	}
 	
 	/**

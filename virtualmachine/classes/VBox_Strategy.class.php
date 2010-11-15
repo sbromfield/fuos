@@ -332,6 +332,14 @@ EOF;
 	 */
 	public function create() {
 
+		/**
+		 * Verify that all the form parameters are present and validate
+		 * successfully.
+		 * Processors (vmNumProcessors): has to be numeric and greater than
+		 * zero.
+		 * RAM (vmRam): has to be numeric and greater than zero.
+		 * Disk Size (vmDiskSize): has to be numeric and greater than zero.
+		 */
 		$errors = array();
 		if(!is_numeric($_POST['vmNumProcessors']) > 0)
 		{
@@ -346,27 +354,37 @@ EOF;
 			$errors[] = "Please enter the disk size.";
 		}
 		
-		$result = parent::create();
+		/**
+		 * Invoke parent creation logic. Time complexity of parent is constant
+		 * time.
+		 */
+		list($parent_errors, $vm_id) = parent::create();
 		
-		if($result['vm_id'] == 0)
+		/**
+		 * Check if parent creation logic failed to create VM given that no
+		 * errors where detected in the parent creation logic.
+		 */
+		if($vm_id == 0 && !count($parent_errors))
 		{
 			$errors[] = "An unexpected error happened.";
 		}
 		
-		$errors = array_merge($result['errors'], $errors);
-		
+		/**
+		 * Check if errors have been detected. If so, return errors.
+		 */
+		$errors = array_merge($parent_errors, $errors);
 		if(count($errors)) return array($errors, 0);
 		
 		/**
 		 * Strategy create logic.
 		 */
-		require_once("cloudFacade.class.php");
 		$cl = new cloudFacade();
 		
 		/**
-		 * Insert vm Params;
+		 * Insert Virtual Machine Parameters. Time complexity for VM Params 
+		 * insertion is constant time.
 		 */
-		$vm_params = array( 'id' => $result['vm_id'],
+		$vm_params = array( 'id' => $vm_id,
 							'machine_id' => 'NULL',
 							'rdp_port' => 0,
 							'numProcessors' => $_POST['vmNumProcessors'],
@@ -374,52 +392,101 @@ EOF;
 							'video_ram' => 0,
 							'pass' => '',
 							'disk_size' => $_POST['vmDiskSize']);
-		
+							
 		if(!$cl->insertVMParams($vm_params))
 		{
-			require_once("dsFacade.class.php");
+			/**
+			 * If Virtual Machine Parameters insertion failed, undo changes and
+			 * return errors.
+			 * Undoing changes complexity is m, where m is the number of 
+			 * machines in the cloud.
+			 */
 			$ds = new dsFacade();
-			$ds->deleteVM($result['vm_id']);
+			$ds->deleteVM($vm_id);
 			$errors[] = 'Unable to insert VM Params.';
 			return array($errors, 0);
 		}
 
+		/**
+		 * Get Random SSH connection to one of the machines in the cloud to
+		 * create the Virtual Machine in the cloud. Time complexity is m, where
+		 * m is the number of machines in the cloud.
+		 */
 		list($ssh, $machine) = $this->getSSHConnection();		
 		
+		/**
+		 * If unable to get an SSH connection, undo changes and return errors.
+		 * Undoing changes complexity is m, where m is the number of 
+		 * machines in the cloud.
+		 */
 		if(!$ssh)
 		{
 			$ds = new dsFacade();
-			parent::delete($result['vm_id']);
+			parent::delete($vm_id);
 			$errors[] = 'Unable to get SSH Connection.';
 			return array($errors, 0);
 		}
 		
-		require_once("dsFacade.class.php");
+		/**
+		 * Select Virtual Machine created by parent.
+		 */
 		$ds = new dsFacade();
-		if(!$vm = $ds->selectVM($result['vm_id']))
+		if(!$vm = $ds->selectVM($vm_id))
 		{
-			parent::delete($result['vm_id']);
+			/**
+			 * If unable to fetch Virtual Machine created by parent, undo changes 
+			 * and return errors.
+			 * Undoing changes complexity is m, where m is the number of 
+			 * machines in the cloud.
+			 */
+			parent::delete($vm_id);
 			$errors[] = 'Unable to select VM';
 			return array($errors, 0);
 		}
 
-		$output = nl2br($ssh->exec('VBoxManage createvm --name "' . $vm->name . '" --register'));
+		/**
+		 * Create Virtual Machine in the hypervisor.
+		 */
+		$output = $ssh->exec(
+			"VBoxManage createvm --name \"{$vm->name}\" --register"
+		);
 		if(strlen(stristr($output, "ERROR")))
 		{
-			parent::delete($result['vm_id']);
+			/**
+			 * If unable to create virtual machine in the hypervisor, undo 
+			 * changes and return errors.
+			 * Undoing changes complexity is m, where m is the number of 
+			 * machines in the cloud.
+			 */
+			parent::delete($vm_id);
 			$errors[] = 'Virtualbox error at creating VM.';
 			return array($errors, 0);
 		}
 		
-		$output = nl2br($ssh->exec('VBoxManage createvdi --filename "' . $vm->name . '.vdi" --size ' . $vm_params['disk_size'] . ' --remember'));
+		/**
+		 * Create Virtual Machine's VDI file in the cloud.
+		 */
+		$output = $ssh->exec(
+			"VBoxManage createvdi --filename \"{$vm->name}.vdi\" "
+			. "--size {$vm_params['disk_size']} --remember"
+		);
 		if(strlen(stristr($output, "ERROR")))
 		{
-			parent::delete($result['vm_id']);
-			$ssh->exec('VBoxManage unregistervm "' . $vm->name . '" --delete');
+			/**
+			 * If unable to create virtual machine's VDIA in the cloud, undo 
+			 * changes and return errors.
+			 * Undoing changes complexity is m, where m is the number of 
+			 * machines in the cloud.
+			 */
+			parent::delete($vm_id);
+			$ssh->exec("VBoxManage unregistervm \"{$vm->name}\" --delete");
 			$errors[] = 'Virtualbox error at creating VDI';
 			return array($errors, 0);
 		}
 		
+		/**
+		 * Determine what ISO to use as the installation media.
+		 */
 		$iso = "";
 		switch($_POST['iso'])
 		{
@@ -431,20 +498,51 @@ EOF;
 				break;
 		}
 		
-		$output = nl2br($ssh->exec('VBoxManage storagectl "' . $vm->name .'" --name "SATA CONTROLLER" --add sata'));
-		$output .= nl2br($ssh->exec('VBoxManage storageattach "' . $vm->name . '" --storagectl "SATA CONTROLLER" --port 0 --device 0 --type hdd --medium "' . $vm->name . '.vdi"'));
-		$output .= nl2br($ssh->exec('VBoxManage modifyvm "' . $vm->name . '" --memory ' . $vm_params['ram'] . ' --cpus ' . $vm_params['numProcessors'] . ' --vrdp on --vrdpmulticon on --vrdpreusecon on --vrdpport 3390-3450 --mouse usbtablet --keyboard usb'));
-		$output = $ssh->exec('VBoxManage storagectl "' . $vm->name . '" --name "IDE CONTROLLER" --add ide');
-		$output = $ssh->exec('VBoxManage storageattach "' . $vm->name . '" --storagectl "IDE CONTROLLER" --type dvddrive --port 0 --device 0 --medium ~/ISOS/' . $iso);
+		/**
+		 * Configure Virtual Machine. This is broken down into the following:
+		 * 1. Create a SATA Controller.
+		 * 2. Attach VDI to Sata Controller.
+		 * 3. Modify the Virtual Machine to adjust memory and cpus requirements
+		 *    as well as other parameters that are required for proper operation.
+		 * 4. Create an IDE Controller.
+		 * 5. Attatch ISO to IDE Controller.
+		 */
+		$output = $ssh->exec(
+			"VBoxManage storagectl \"{$vm->name}\" --name \"SATA CONTROLLER\" "
+			. "--add sata"
+		);
+		$output .= $ssh->exec(
+			"VBoxManage storageattach \"{$vm->name}\" "
+			. "--storagectl \"{SATA CONTROLLER}\" --port 0 --device 0 "
+			. "--type hdd --medium \"{$vm->name}.vdi\""
+		);
+		$output .= $ssh->exec(
+			"VBoxManage modifyvm \"{$vm->name}\" --memory {$vm_params['ram']} "
+			. "--cpus {$vm_params['numProcessors']} --vrdp on "
+			. "--vrdpmulticon on --vrdpreusecon on --vrdpport 3390-3450 "
+			. "--mouse usbtablet --keyboard usb"
+		);
+		$output = $ssh->exec(
+			"VBoxManage storagectl \"{$vm->name}\" --name \"IDE CONTROLLER\" "
+			. "--add ide"
+		);
+		$output = $ssh->exec(
+			"VBoxManage storageattach \"{$vm->name}\" "
+			. "--storagectl \"IDE CONTROLLER\" --type dvddrive --port 0 "
+			. "--device 0 --medium ~/ISOS/" . $iso
+		);
 		if(strlen(stristr($output, "ERROR")))
 		{
-			parent::delete($result['vm_id']);
-			$this->delete($result['vm_id']);
+			/**
+			 * If unable to configure virtual machine, undo changes and 
+			 * return errors.
+			 * Undoing changes complexity is m, where m is the number of 
+			 * machines in the cloud.
+			 */
+			$this->delete($vm_id);
 			$errors[] = 'Virtualbox error at setting up Virtual Machine.';
 			return array($errors, 0);
 		}
-
-		$this->start($vm->id);
 		
 		return array($errors, $vm->id);
 		 
