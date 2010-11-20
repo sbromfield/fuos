@@ -52,7 +52,9 @@ class startVM_cmd implements Command
 			/**
 			 * Started successfully. Redirect to the Virtual Machine listing.
 			 */
-			header("Location: " . $CFG->wwwroot . "/mod/virtualmachine/?a=listVM&id={$course->id}&vm=${vmid}");
+			$location = $CFG->wwwroot . "/mod/virtualmachine/?a=listVM&id={$course->id}&vm=${vmid}";
+			if(isset($_GET['assid'])) $location .= "&assid={$_GET['assid']}";
+			header("Location: " . $location);
 			exit();
 		}else{
 			echo "An error has happened.";

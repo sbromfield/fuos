@@ -12,7 +12,7 @@ class createVMAssignment_cmd implements Command
 	 * Executes create Virtual Machine assignment use case logic.
 	 */
 	public function execute() {
-		global $USER;
+		global $USER, $COURSE;
 		
 		$assignment_id = required_param("assid", PARAM_INT);
 		$assignment = get_record("assignment", "id", $assignment_id);
@@ -32,7 +32,7 @@ class createVMAssignment_cmd implements Command
 		}
 		
 		global $CFG;
-		header("Location: " . $CFG->wwwroot . "/mod/virtualmachine/index.php?a=listVM&id={$course->id}&vm={$vmid}");
+		header("Location: " . $CFG->wwwroot . "/mod/virtualmachine/index.php?a=listVM&id={$COURSE->id}&vm={$vmid}");
 		exit();
 	}
 }

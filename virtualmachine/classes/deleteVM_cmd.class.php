@@ -37,7 +37,9 @@ class deleteVM_cmd implements Command
 			/**
 			 * Deleted successfully. Redirect to the Virtual Machine listing.
 			 */
-			header("Location: " . $CFG->wwwroot . "/mod/virtualmachine/index.php?a=listVM&id={$course->id}");
+			$location = $CFG->wwwroot . "/mod/virtualmachine/index.php?a=listVM&id={$course->id}";
+			if(isset($_GET['assid'])) $location .= "&assid={$_GET['assid']}";
+			header("Location: " . $location);
 			exit();
 		}else{
 			echo "An error has happened";

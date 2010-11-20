@@ -88,7 +88,6 @@ class VBox_Strategy extends Cloud_Strategy
 		if(!$vm = $ds->selectVM($vm_id)) return false;
 		
 		$output = nl2br($ssh->exec('VBoxManage controlvm "' . $vm->name . '" poweroff'));
-//		die($output);
 		if(preg_match("/ERROR/i", $output))
 		{		
 			if("HALTED" != $this->getState($vm_id))
@@ -274,6 +273,7 @@ class VBox_Strategy extends Cloud_Strategy
       }
       
       /* If false is returned, the form will not be submitted and we stay on the same page. */
+
       return false;
     }
     function sendScancodes()
@@ -322,6 +322,12 @@ EOF;
 			case "running":
 				$state = "RUNNING";
 				break;
+		}
+
+		if(strlen($state))
+		{
+			$vm->state = $state;
+			$ds->updateVM($vm);
 		}
 
 		return $state;
@@ -384,14 +390,14 @@ EOF;
 		 * Insert Virtual Machine Parameters. Time complexity for VM Params 
 		 * insertion is constant time.
 		 */
-		$vm_params = array( 'id' => $vm_id,
-							'machine_id' => 'NULL',
-							'rdp_port' => 0,
-							'numProcessors' => $_POST['vmNumProcessors'],
-							'ram' => $_POST['vmRam'],
-							'video_ram' => 0,
-							'pass' => '',
-							'disk_size' => $_POST['vmDiskSize']);
+		$vm_params = array(	'id' => $vm_id,
+					'machine_id' => 'NULL',
+					'rdp_port' => 0,
+					'numProcessors' => $_POST['vmNumProcessors'],
+					'ram' => $_POST['vmRam'],
+					'video_ram' => 0,
+					'pass' => '',
+					'disk_size' => $_POST['vmDiskSize']);
 							
 		if(!$cl->insertVMParams($vm_params))
 		{
@@ -513,7 +519,7 @@ EOF;
 		);
 		$output .= $ssh->exec(
 			"VBoxManage storageattach \"{$vm->name}\" "
-			. "--storagectl \"{SATA CONTROLLER}\" --port 0 --device 0 "
+			. "--storagectl \"SATA CONTROLLER\" --port 0 --device 0 "
 			. "--type hdd --medium \"{$vm->name}.vdi\""
 		);
 		$output .= $ssh->exec(
@@ -522,11 +528,11 @@ EOF;
 			. "--vrdpmulticon on --vrdpreusecon on --vrdpport 3390-3450 "
 			. "--mouse usbtablet --keyboard usb"
 		);
-		$output = $ssh->exec(
+		$output .= $ssh->exec(
 			"VBoxManage storagectl \"{$vm->name}\" --name \"IDE CONTROLLER\" "
 			. "--add ide"
 		);
-		$output = $ssh->exec(
+		$output .= $ssh->exec(
 			"VBoxManage storageattach \"{$vm->name}\" "
 			. "--storagectl \"IDE CONTROLLER\" --type dvddrive --port 0 "
 			. "--device 0 --medium ~/ISOS/" . $iso
@@ -664,11 +670,11 @@ EOF;
 	
 		$form_extra = '		<tr>
 			<td style="padding: 7px; text-align: right"><label for="vmNumProcessors"># of processors:</label></td>
-			<td><input type="text" name="vmNumProcessors" id="vmNumProcessors" value="' . $vmNumProcessors .'" /></td>
+			<td>' . $this->makeCPUList() . '</td>
 		</tr>
 		<tr>
 			<td style="padding: 7px; text-align: right"><label for="vmRam">System RAM:</label></td>
-			<td><input type="text" name="vmRam" id="vmRam" value="' . $vmRam .'" />&nbsp;MB</td>
+			<td>' . $this->makeRamList("vmRam") . '&nbsp;MB</td>
 		</tr>
 		<!--tr>
 			<td style="padding: 7px; text-align: right"><label for="vmVideoRam">Video RAM:</label></td>
@@ -676,7 +682,7 @@ EOF;
 		</tr-->
 		<tr>
 			<td style="padding: 7px; text-align: right"><label for="vmDiskSize">Disk Size:</label></td>
-			<td><input type="text" name="vmDiskSize" id="vmDiskSize" value="' . $vmDiskSize .'" />&nbsp;MB</td>
+			<td>' . $this->makeDiskList() . '&nbsp;GB</td>
 		</tr>
 		<tr>
 			<td style="padding: 7px; text-align: right"><label for="iso">Select ISO:</label></td>
@@ -697,6 +703,59 @@ EOF;
 		$page->content = str_replace('%%EXTRA_FORM%%', $form_extra, $page->content);
 		
 		return $page;
+	}
+	
+	
+	private function makeRamList($name)
+	{
+		$list = sprintf('<select name="%s" id="%s">', $name, $name);
+
+		for($i = 32; $i <= 2048; $i+=$i) 
+		{
+			if(isset($_POST[$name]) && $i == $_POST[$name])
+			{
+				$list .= sprintf('<option selected value="%d">%d</option>', $i, $i);
+			}
+			else 
+				$list .= sprintf('<option value="%d">%d</option>', $i, $i);
+		}
+
+		$list .=  "</select>";
+		return $list;
+	}
+	
+	private function makeCPUList()
+	{
+		$list = '<select name="vmNumProcessors" id="vmNumProcessors" >';
+
+		for ($index = 1; $index < 32; $index++) {
+			if(isset($_POST['vmNumProcessors']) && $index == $_POST['vmNumProcessors'])
+			{
+				$list .= sprintf('<option selected value="%d">%d</option>', $index, $index);
+			}
+			else
+				$list .= sprintf('<option value="%d">%d</option>', $index, $index);
+		}
+
+		$list .= "</select>";
+		return $list;
+	}
+	
+	private function makeDiskList()
+	{
+		$list = '<select name="vmDiskSize" id="vmDiskSize">';
+
+		for ($index = 1; $index <= 10; $index++) {
+			if(isset($_POST['vmDiskSize']) && $index*1024 == $_POST['vmDiskSize'])
+			{
+				$list .= sprintf('<option selected value="%d">%d</option>', $index*1024, $index);
+			}
+			else
+				$list .= sprintf('<option value="%d">%d</option>', $index*1024, $index);
+		}
+
+		$list .= "</select>";
+		return $list;
 	}
 	
 	

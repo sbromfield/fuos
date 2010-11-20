@@ -33,6 +33,6 @@ class viewVM_page implements Page
         print_simple_box_start('center', '1034px', '', 0, 'generalbox', 'vm_template');        	    
 		echo $this->content;
 		print_simple_box_end();
-		print_footer($course);
+		print_footer($COURSE);
 	}
 }

@@ -7,13 +7,15 @@ require_once "Page.interface.php";
  * interface for the list instructor virtual machine (vMoodleI21)
  * and list students' virtual machines (vMoodleS13) use cases.
  */
-class listVM_page implements Page
+class listVMAssignment_page implements Page
 {
 	/**
 	 * Contains the contents of the page.
 	 */
 	public $content;
 	public $vms;
+	public $template;
+	public $assignment;
 	
 	public function display() {
 		global $COURSE, $CFG, $SITE;
@@ -30,11 +32,12 @@ class listVM_page implements Page
    	                 "", $meta, true, '', user_login_string($SITE));
 		
 		print_simple_box_start('center', '', '', 0, 'generalbox', 'vm_template');
-		echo "<strong><a href=\"?a=createVM&id={$COURSE->id}&strat=VBOX\">Create VM</a></strong><br />";
-		print_simple_box_end();
-		
-		print_simple_box_start('center', '', '', 0, 'generalbox', 'vm_template');
-		
+	
+		echo "<b>Assignment:</b>{$this->assignment->name}<br /><br /><br /><strong>Template</strong><br /><br />";	
+		$this->displayHeader();
+		$this->printVM($this->template);
+
+		echo "</table><br /><br /><br /><strong>Students Virtual Machines</strong><br /><br />";
 		if(!count($this->vms))
 		{
 			echo "No Virtual Machines";
@@ -42,79 +45,18 @@ class listVM_page implements Page
 		else
 		{
 
-			require_once("dsFacade.class.php");
-			$ds = new dsFacade();
-			$cm = Cloud_Manager::getInstance();
-			$single_vms = array();
-			$bins = array();
+			$this->displayHeader();
 			foreach($this->vms as $vm)
 			{
-				$vm->state = $cm->getState($vm->id);
-				if($vm->isTemplate) $bins[$vm->id]['template'] = $vm;
-				elseif($UVA = $ds->selectUVAByV($vm->id)) {
-					$user = get_record("user", "id", $UVA->user_id);
-					$vm->user = $user->username;
-					$vm->userid = $user->id;
-					$bins[$vm->parent_id]['childs'][] = $vm;
-				}
-				else $single_vms[] = $vm;
+				$this->printVM($vm);
 			}
+			echo "</table>";
 		
-			$this->printSingleVMs($single_vms);
-			echo "<hr /><br /><strong>Templates and their Children Virtual Machines</strong><br /><br />";
-			foreach($bins as $bin)
-			{
-				$this->printBin($bin);
-			}
-
-			$this->displayBottom();
-				
 		}
 		print_simple_box_end();
 		print_footer($COURSE);
 	}
 	
-	
-	private function printSingleVMs($vms)
-	{
-		print_simple_box_start('center', '', '', 0, 'generalbox', 'vm_template');
-		echo "<strong>Unassigned Virtual Machines</strong><br />";
-		if(count($vms))
-		{
-			$this->displayHeader();
-			foreach($vms as $vm)
-			{
-				$this->printVM($vm);
-			}
-			echo "</table>";
-		}else{
-			echo "No single VMs";
-		}
-		print_simple_box_end();
-	}
-	
-	private function printBin($bin)
-	{
-		print_simple_box_start('center', '', '', 0, 'generalbox', 'vm_template');
-		echo "<strong>Template</strong><br /><br />";
-		$this->displayHeader();
-		$this->printVM($bin['template']);
-		echo "</table><br /><br /><br /><strong>Students Virtual Machines</strong><br /><br />";
-		$vms = @$bin['childs'];
-		if(count($vms))
-		{
-			$this->displayHeader();
-			foreach($vms as $vm)
-			{
-				$this->printVM($vm);
-			}
-			echo "</table>";
-		}else{
-			echo "No student virtual machines.";
-		}
-//		print_r($bin['template']);
-		print_simple_box_end();
-	}
 	
 	private function printVM($vm)
 	{
@@ -123,7 +65,7 @@ class listVM_page implements Page
 		<td style='padding: 10px'>";
 		if(isset($vm->user))
 		{
-			echo "<a href=\"{$CFG->wwwroot}/user/view.php?id={$vm->userid}&course={$_GET['id']}\">{$vm->user}</a>";
+			echo "<a href=\"{$CFG->wwwroot}/user/view.php?id={$vm->user->id}&course={$_GET['id']}\">{$vm->user->username}</a>";
 		}else{
 			echo $vm->name;
 		}
@@ -131,34 +73,28 @@ class listVM_page implements Page
 		<td style='padding: 10px'>{$vm->state}</td>";
 		if($vm->state != "RUNNING")
 		{
-			echo "<td style='padding: 10px'><a href=\"?a=startVM&id={$COURSE->id}&vm={$vm->id}\">Start</a></td>";
+			echo "<td style='padding: 10px'><a href=\"?a=startVM&assid={$this->assignment->id}&id={$COURSE->id}&vm={$vm->id}\">Start</a></td>";
 			echo "<td style='padding: 10px'>Stop</td>";
 			echo "<td style='padding: 10px'>View</td>";
 			
-			//echo "<td style='padding: 10px'><a href=\"?a=duplicateVM&id={$COURSE->id}&vm={$vm->id}\">Duplicate</a></td>";
 			if($vm->isTemplate==0)
 			{
-				echo "<td style='padding: 10px'><a href=\"?a=deleteVM&id={$COURSE->id}&vm={$vm->id}\">Delete</a></td>";
-				if(!$vm->parent_id)
-				{
-					echo "<td style='padding: 10px'><a href=\"?a=setVMAsTemplate&id={$COURSE->id}&vm={$vm->id}\">Make template</a></td>";
-				}
+				echo "<td style='padding: 10px'><a href=\"?a=deleteVM&assid={$this->assignment->id}&id={$COURSE->id}&vm={$vm->id}\">Delete</a></td>";
 			}
 		}
 		else
 		{
 			echo "<td style='padding: 10px'>Start</td>";
-			echo "<td style='padding: 10px'><a id='stopBtn' vmname=\"{$vm->name}\" href=\"?a=stopVM&id={$COURSE->id}&vm={$vm->id}\">Stop</a></td>";
-			echo "<td style='padding: 10px'><a href=\"?a=viewVM&id={$COURSE->id}&vm={$vm->id}\">View</a></td>";
-			//echo "<td style='padding: 10px'>Duplicate</td>";
+			echo "<td style='padding: 10px'><a id='stopBtn' vmname=\"{$vm->name}\" href=\"?a=stopVM&assid={$this->assignment->id}&id={$COURSE->id}&vm={$vm->id}\">Stop</a></td>";
+			echo "<td style='padding: 10px'><a href=\"?a=viewVM&assid={$this->assignment->id}&id={$COURSE->id}&vm={$vm->id}\">View</a></td>";
 			if($vm->isTemplate==0)
 			{
 				echo "<td style='padding: 10px'>Delete</td>";
-				if(!$vm->parent_id)
-				{
-					echo "<td style='padding: 10px'>Make template</td>";
-				}
 			}
+		}
+		if(isset($vm->user))
+		{
+			echo "<td style='padding: 10px'><a href=\"{$CFG->wwwroot}/mod/assignment/submissions.php?id={$this->assignment->id}&userid={$vm->user->id}&mode=single&offset=0\" onClick=\"javascript:this.target='grade3'; return openpopup('/mod/assignment/submissions.php?id={$this->assignment->id}&amp;userid={$vm->user->id}&amp;mode=single&amp;offset=0', 'grade3', 'menubar=0,location=0,scrollbars,resizable,width=780,height=600', 0);\">Grade</a></td>";
 		}
 		echo "</tr>";
 	}

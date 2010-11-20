@@ -82,6 +82,11 @@ class dsFacade
 	{
 		return get_record("vMoodle_UVA", "vm_id", $vm_id);
 	}
+
+	public function selectUVAByA($assignment_id)
+	{
+		return get_records("vMoodle_UVA", "assignment_id", $assignment_id);
+	}
 	
 	public function deleteUVA($vm_id)
 	{

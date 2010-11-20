@@ -105,6 +105,8 @@ class Cloud_Manager
 	 * strategy.
 	 */
 	public function getState($vm_id) {
+		if(!$s = $this->getStrategy($vm_id)) return false;
+		return $s->getState($vm_id);
 	}
 	
 	/**

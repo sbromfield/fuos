@@ -35,9 +35,30 @@ class listVM_cmd implements Command
 			 * the desired Virtual Machines it should display, and display it.
 			 */
 			$ds = new dsFacade();
-			$page = new listVM_Page();
-			$page->vms = $ds->selectVMsFromUser($USER->id);
-			$page->display();
+			$assid = optional_param("assid", 0, PARAM_INT);
+
+			$page = NULL;
+			if($assid)
+			{
+				$page = new listVMAssignment_Page();
+				$page->assignment = get_record("assignment", "id", $assid);
+				if($UVAS = $ds->selectUVAByA($assid))
+				{
+					foreach($UVAS as $UVA) {
+						$vm = $ds->selectVM($UVA->vm_id);
+						$vm->user = get_record("user", "id", $UVA->user_id);
+						$page->vms[] = $vm;
+						if($page->template == NULL) {
+							$page->template = $ds->selectVM($vm->parent_id);
+						}
+					}
+				}
+				$page->display();
+			}else{
+				$page = new listVM_Page();
+				$page->vms = $ds->selectVMsFromUser($USER->id);
+				$page->display();
+			}
 		}
 		else
 		{
