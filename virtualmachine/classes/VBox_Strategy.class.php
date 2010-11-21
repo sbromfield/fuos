@@ -18,23 +18,7 @@ class VBox_Strategy extends Cloud_Strategy
 		$cl = new cloudFacade();
 		if(!$params = $cl->selectVMParams($vm_id)) return false;
 
-		$machines = $cl->selectMachines();
-		if(!$machines || !is_array($machines))
-		{
-			return false;
-		};
-	
-		$ssh = NULL;
-		$machine = NULL;
-		foreach($machines as $_machine)
-		{
-			$_ssh = new Net_SSH2($_machine->host);
-			if ($_ssh->login($_machine->user, $_machine->pass)) {
-		    	$ssh = $_ssh;
-		    	$machine = $_machine;
-		    	break;
-			}
-		}
+		list($ssh, $machine) = $this->getSSHConnection();
 		
 		if(!$ssh)
 		{
@@ -78,6 +62,7 @@ class VBox_Strategy extends Cloud_Strategy
 		if(!$params = $cl->selectVMParams($vm_id)) return false;
 		if(!$machine = $cl->selectMachine($params->machine_id)) return false;
 
+		list($ssh, $machine) = $this->getSSHConnection($machine);
 		$ssh = new Net_SSH2($machine->host);
 		if (!$ssh->login($machine->user, $machine->pass)) {
 		    return false;
@@ -273,6 +258,7 @@ class VBox_Strategy extends Cloud_Strategy
       }
       
       /* If false is returned, the form will not be submitted and we stay on the same page. */
+
 
       return false;
     }
@@ -705,6 +691,36 @@ EOF;
 		return $page;
 	}
 	
+	/**
+	 * Cloud specific logic for installation done.
+	 */
+	public function installationDone($vm_id) {
+
+		if(!parent::installationDone($vm_id)) return false;
+		
+		$ds = new dsFacade();
+		
+		$vm = $ds->selectVM($vm_id);
+		
+		list($ssh, $machine) = $this->getSSHConnection();
+		
+		$output = $ssh->exec(
+			"VBoxManage storageattach \"{$vm->name}\" "
+			. "--storagectl \"IDE CONTROLLER\" --type dvddrive --port 0 "
+			. "--device 0 --medium emptydrive"
+		);
+		if(strlen(stristr($output, "ERROR")))
+		{
+			$vm = new stdclass;
+			$vm->id = $vm_id;
+			$vm->installation_done = 0;
+			$ds->updateVM($vm);
+			echo $output;
+			return false;
+		}
+		
+		return true;
+	}
 	
 	private function makeRamList($name)
 	{

@@ -42,15 +42,13 @@ class listVM_cmd implements Command
 			{
 				$page = new listVMAssignment_Page();
 				$page->assignment = get_record("assignment", "id", $assid);
+				$page->template = $ds->selectVM($page->assignment->var1);
 				if($UVAS = $ds->selectUVAByA($assid))
 				{
 					foreach($UVAS as $UVA) {
 						$vm = $ds->selectVM($UVA->vm_id);
 						$vm->user = get_record("user", "id", $UVA->user_id);
 						$page->vms[] = $vm;
-						if($page->template == NULL) {
-							$page->template = $ds->selectVM($vm->parent_id);
-						}
 					}
 				}
 				$page->display();
@@ -86,6 +84,7 @@ class listVM_cmd implements Command
 			 */
 			$page = new listStudentVM_Page();
 			$page->vms = array($ds->selectVM($vm_id));
+			$page->assignment = get_record("assignment", "id", $UVA->assignment_id);
 			$page->display();
 		}
                     

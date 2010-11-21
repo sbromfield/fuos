@@ -161,4 +161,13 @@ class Cloud_Manager
 		if(!$s = $this->getStrategy($strat)) return "";
 		return $s->createVMForm();
 	}
+	
+	/**
+	 * It re-routes the installation done operation to the 
+	 * apropriate strategy.
+	 */
+	public function installationDone($vm_id) {
+		if(!$s = $this->getStrategy($vm_id)) return false;
+		return $s->installationDone($vm_id);
+	}
 }

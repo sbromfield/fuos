@@ -141,7 +141,10 @@ class listVM_page implements Page
 				echo "<td style='padding: 10px'><a href=\"?a=deleteVM&id={$COURSE->id}&vm={$vm->id}\">Delete</a></td>";
 				if(!$vm->parent_id)
 				{
-					echo "<td style='padding: 10px'><a href=\"?a=setVMAsTemplate&id={$COURSE->id}&vm={$vm->id}\">Make template</a></td>";
+					if($vm->installation_done)
+						echo "<td style='padding: 10px'><a href=\"?a=setVMAsTemplate&id={$COURSE->id}&vm={$vm->id}\">Make template</a></td>";
+					else
+						echo "<td style='padding: 10px'><a href=\"?a=installationDone&id={$COURSE->id}&vm={$vm->id}\">Intallation Done</a></td>";
 				}
 			}
 		}
@@ -156,7 +159,10 @@ class listVM_page implements Page
 				echo "<td style='padding: 10px'>Delete</td>";
 				if(!$vm->parent_id)
 				{
-					echo "<td style='padding: 10px'>Make template</td>";
+					if($vm->installation_done)
+						echo "<td style='padding: 10px'>Make template</td>";
+					else
+						echo "<td style='padding: 10px'>Installation Completed</td>";
 				}
 			}
 		}

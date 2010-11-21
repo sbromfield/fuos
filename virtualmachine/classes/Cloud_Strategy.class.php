@@ -14,6 +14,7 @@ interface ICloud_Strategy {
 	public function delete($vm_id);
 	public function setAsTemplate($vm_id);
 	public function createVMForm();
+	public function installationDone($vm_id);
 }
 
 /**
@@ -225,5 +226,16 @@ abstract class Cloud_Strategy implements ICloud_Strategy
 		$page = new createVM_Page();
 		$page->content = $form;
 		return $page;
+	}
+	
+	/**
+	 * Logic for installation done.
+	 */
+	public function installationDone($vm_id) {
+		$ds = new dsFacade();
+		$vm = new stdclass;
+		$vm->id = $vm_id;
+		$vm->installation_done = 1;
+		return $ds->updateVM($vm);
 	}
 }

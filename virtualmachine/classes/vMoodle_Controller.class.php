@@ -92,6 +92,10 @@ class vMoodle_Controller
 					$cmd = new createVMAssignment_cmd();
 					break;
 					
+				case 'installationDone':
+					$cmd = new installationDone_cmd();
+					break;
+					
 				default:
 					// default to something
 			}

@@ -13,6 +13,7 @@ class listStudentVM_page implements Page
 	 * Contains the contents of the page.
 	 */
 	public $content;
+	public $assignment;
 	public $vms;
 	
 	public function display() {
@@ -27,11 +28,17 @@ class listStudentVM_page implements Page
    	                  build_navigation($navlinks),
    	                 "", $meta, true, '', user_login_string($SITE));
 		
+		$due = ($this->assignment->timedue - time() <= 0) ? true : false;
+		
 		print_simple_box_start('center', '', '', 0, 'generalbox', 'vm_template');
 		
 		if(!count($this->vms))
 		{
 			echo "No Virtual Machines";
+		}
+		elseif($due)
+		{
+			echo "Assignment is already past due date.";
 		}
 		else
 		{
