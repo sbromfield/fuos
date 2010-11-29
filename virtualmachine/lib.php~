@@ -1,0 +1,43 @@
+<?php
+
+function verify_access_and_get_course()
+{
+	// Get course id
+	$courseid = optional_param('id', 0, PARAM_INT);                   // Course id
+
+	// Check that the course is valid
+	if ($courseid) {
+		if (! $course = get_record('course', 'id', $courseid)) {
+			error("Course ID is incorrect");
+		}
+	} else {
+		error("Could not find a top-level course!");
+	}
+
+	require_course_login($course);
+	$GLOBALS['COURSE'] = $course;
+	return $course;
+}
+
+function get_course()
+{
+	
+}
+
+
+function get_vms()
+{
+    return array( 	
+	   	'0' => array('name' => 'Debian base system', 'hd' => '50 GB', 'ram' => '128 MB', 'status' => 'running'),
+	   	'1' => array('name' => 'Debian base system with X11', 'hd' => '75 GB', 'ram' => '256 MB', 'status' => 'stopped'),
+    	'2' => array('name' => 'Windows XP', 'hd' => '20 GB', 'ram' => '512 MB', 'status' => 'running'),
+    	'3' => array('name' => 'Debian LAMP', 'hd' => '45 GB', 'ram' => '256 MB', 'status' => 'stopped'),
+	);
+}
+
+function get_student_vm()
+{
+    return array( 	
+	   	'0' => array('name' => 'Debian base system', 'hd' => '50 GB', 'ram' => '128 MB', 'status' => 'running'),
+	);
+}

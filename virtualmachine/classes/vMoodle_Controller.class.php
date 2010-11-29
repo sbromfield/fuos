@@ -98,17 +98,19 @@ class vMoodle_Controller
 					
 				default:
 					// default to something
+					return false;
 			}
 		}
 		else
 		{
 			// default to something
+			return false;
 		}
 
 		/**
 		 * Execute the appropriate command.
 		 */
 		if($cmd != NULL)
-			$cmd->execute();
+			return $cmd->execute();
 	}
 }

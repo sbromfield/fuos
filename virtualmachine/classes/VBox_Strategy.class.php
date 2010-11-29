@@ -1,7 +1,7 @@
 <?php
 
 require "Cloud_Strategy.class.php";
-require_once("classes/ssh/Net/SSH2.php");
+//require_once("classes/ssh/Net/SSH2.php");
 
 /**
  * The Vbox strategy extends the cloud strategy which in turn implements the
@@ -14,18 +14,16 @@ class VBox_Strategy extends Cloud_Strategy
 	 * Cloud specific logic for starting a Virtual Machine
 	 */
 	public function start($vm_id) {
-		require_once("cloudFacade.class.php");
 		$cl = new cloudFacade();
 		if(!$params = $cl->selectVMParams($vm_id)) return false;
 
 		list($ssh, $machine) = $this->getSSHConnection();
-		
+
 		if(!$ssh)
 		{
 			return false;
 		}
 		
-		require_once("dsFacade.class.php");
 		$ds = new dsFacade();
 		if(!$vm = $ds->selectVM($vm_id)) return false;
 
@@ -57,7 +55,6 @@ class VBox_Strategy extends Cloud_Strategy
 	 */
 	public function stop($vm_id) {
 
-		require_once("cloudFacade.class.php");
 		$cl = new cloudFacade();
 		if(!$params = $cl->selectVMParams($vm_id)) return false;
 		if(!$machine = $cl->selectMachine($params->machine_id)) return false;
@@ -68,7 +65,6 @@ class VBox_Strategy extends Cloud_Strategy
 		    return false;
 		}
 		
-		require_once("dsFacade.class.php");
 		$ds = new dsFacade();
 		if(!$vm = $ds->selectVM($vm_id)) return false;
 		
@@ -88,7 +84,6 @@ class VBox_Strategy extends Cloud_Strategy
 	 * Cloud specific logic for viewing a Virtual Machine
 	 */
 	public function view($vm_id) {	
-		require_once("cloudFacade.class.php");
 		$cl = new cloudFacade();
 		if(!$vm = $cl->selectVMParams($vm_id)) return "";
 		if(!$machine = $cl->selectMachine($vm->machine_id)) return "";
@@ -282,7 +277,6 @@ EOF;
 	 * Cloud specific logic for getting a Virtual Machine's state
 	 */
 	public function getState($vm_id) {
-		require_once("cloudFacade.class.php");
 		$cl = new cloudFacade();
 		if(!$params = $cl->selectVMParams($vm_id)) return false;
 		if(!$machine = $cl->selectMachine($params->machine_id)) return false;
@@ -292,7 +286,6 @@ EOF;
 		    return false;
 		}
 		
-		require_once("dsFacade.class.php");
 		$ds = new dsFacade();
 		if(!$vm = $ds->selectVM($vm_id)) return false;
 		
@@ -333,15 +326,15 @@ EOF;
 		 * Disk Size (vmDiskSize): has to be numeric and greater than zero.
 		 */
 		$errors = array();
-		if(!is_numeric($_POST['vmNumProcessors']) > 0)
+		if(@!is_numeric($_POST['vmNumProcessors']) > 0)
 		{
 			$errors[] = "Please enter the number of processors";
 		}
-		if(!(is_numeric($_POST['vmRam']) && $_POST['vmRam'] > 0))
+		if(@!(is_numeric($_POST['vmRam']) && $_POST['vmRam'] > 0))
 		{
 			$errors[] = "Please enter the amount of RAM.";
 		}
-		if(!(is_numeric($_POST['vmDiskSize']) && $_POST['vmDiskSize'] > 0))
+		if(@!(is_numeric($_POST['vmDiskSize']) && $_POST['vmDiskSize'] > 0))
 		{
 			$errors[] = "Please enter the disk size.";
 		}
@@ -547,8 +540,6 @@ EOF;
 	{
 		$vm_nid = parent::createChildVM($vm_id, $user, $assignment_id);
 		
-		require_once("dsFacade.class.php");
-		require_once("cloudFacade.class.php");
 		$cl = new cloudFacade();
 		$ds = new dsFacade();
 		$parent_vm = $ds->selectVM($vm_id);
@@ -556,7 +547,7 @@ EOF;
 		$vm_params = $cl->selectVMParams($vm_nid);
 		
 		list($ssh, $machine) = $this->getSSHConnection();
-		echo nl2br($ssh->exec('VBoxManage createvm --name "' . $vm->name . '" --register'));
+		$output = ($ssh->exec('VBoxManage createvm --name "' . $vm->name . '" --register'));
 		$output = nl2br($ssh->exec('VBoxManage storagectl "' . $vm->name .'" --name "SATA CONTROLLER" --add sata'));
 		$output .= nl2br($ssh->exec('VBoxManage storageattach "' . $vm->name . '" --storagectl "SATA CONTROLLER" --port 0 --device 0 --type hdd --medium "' . $parent_vm->name . '.vdi"'));
 		$output .= nl2br($ssh->exec('VBoxManage modifyvm "' . $vm->name . '" --memory ' . $vm_params->ram . ' --cpus ' . $vm_params->numProcessors . ' --vrdp on --vrdpmulticon on --vrdpreusecon on --vrdpport 3390-3450 --mouse usbtablet --keyboard usb'));
@@ -576,7 +567,6 @@ EOF;
 	 * Cloud specific logic for deleting a Virtual Machine
 	 */
 	public function delete($vm_id) {
-		require_once("dsFacade.class.php");
 		$ds = new dsFacade();
 		if(!$vm = $ds->selectVM($vm_id))
 		{
@@ -587,10 +577,9 @@ EOF;
 		{
 			return false;
 		}
-		
+
 		if($vm->isTemplate != 0) return false;
 		
-		require_once("cloudFacade.class.php");
 		$cl = new cloudFacade();
 		if(!$params = $cl->selectVMParams($vm_id)) return false;
 
@@ -629,16 +618,14 @@ EOF;
 	public function setAsTemplate($vm_id) {
 		parent::setAsTemplate($vm_id);
 		
-		require_once("cloudFacade.class.php");
 		$cl = new cloudFacade();
 
 		list($ssh, $machine) = $this->getSSHConnection();
 		
-		require_once("dsFacade.class.php");
 		$ds = new dsFacade();
 		if(!$vm = $ds->selectVM($vm_id)) return false;
 		
-		echo nl2br($ssh->exec("VBoxManage snapshot {$vm->name} take Base"));
+		nl2br($ssh->exec("VBoxManage snapshot {$vm->name} take Base"));
 		
 		return true;
 	}
@@ -777,7 +764,6 @@ EOF;
 	
 	private function getSSHConnection($machine=NULL)
 	{
-		require_once("cloudFacade.class.php");
 		$cl = new cloudFacade();
 
 		$machines = array();

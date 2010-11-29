@@ -51,7 +51,6 @@ class Cloud_Manager
 		$s = "";
 		if(is_numeric($crit))
 		{
-			require_once("dsFacade.class.php");
 			$ds = new dsFacade();
 			$vm = $ds->selectVM($crit);
 			if(!$vm) return NULL;
@@ -65,7 +64,6 @@ class Cloud_Manager
 		switch($s)
 		{
 			case "VBOX":
-				require_once("VBox_Strategy.class.php");
 				$strategy = new VBox_Strategy();
 				break;
 		}

@@ -81,12 +81,12 @@ abstract class Cloud_Strategy implements ICloud_Strategy
 		 */
 		$errors = array();
 		$ds = new dsFacade();
-		if(!ctype_alnum($_POST['vmName']) && strlen($_POST['vmName']) <= 0)
+		if(@!ctype_alnum($_POST['vmName']) && @strlen($_POST['vmName']) <= 0)
 		{
 			$errors[] = "Please enter a name";
 		}
 		
-		if(!(is_numeric($_POST['cloud']) && $ds->selectCloud($_POST['cloud'])))
+		if(@!(is_numeric($_POST['cloud']) && $ds->selectCloud($_POST['cloud'])))
 		{
 			$errors[] = "Please select valid cloud.";
 		}
@@ -114,8 +114,6 @@ abstract class Cloud_Strategy implements ICloud_Strategy
 	 */
 	public function createChildVM($vm_id, $user, $assignment_id)
 	{
-		require_once('dsFacade.class.php');
-		require_once('cloudFacade.class.php');
 		$ds = new dsFacade();
 		$cl = new cloudFacade();
 		$vm = $ds->selectVM($vm_id);
@@ -155,8 +153,6 @@ abstract class Cloud_Strategy implements ICloud_Strategy
 	 * Logic for deleting a Virtual Machine
 	 */
 	public function delete($vm_id) {
-		require_once("dsFacade.class.php");
-		require_once("cloudFacade.class.php");
 		$ds = new dsFacade();
 		$cl = new cloudFacade();
 		$ds->deleteUVA($vm_id);
@@ -167,7 +163,6 @@ abstract class Cloud_Strategy implements ICloud_Strategy
 	 * Logic for setting a Virtual Machine as template
 	 */
 	public function setAsTemplate($vm_id) {
-		require_once("dsFacade.class.php");
 		$ds = new dsFacade();
 		$vm = new stdclass;
 		$vm->id = $vm_id;
@@ -180,10 +175,9 @@ abstract class Cloud_Strategy implements ICloud_Strategy
 	 */
 	public function createVMForm() {
 	
-		require_once("dsFacade.class.php");
-		require_once("Cloud_Manager.class.php");
 		$ds = new dsFacade();
 		$cloud_data = $ds->selectClouds();
+
 		$cloud_select = '<select id="cloud" name="cloud">';
 		foreach($cloud_data as $cloud)
 		{
