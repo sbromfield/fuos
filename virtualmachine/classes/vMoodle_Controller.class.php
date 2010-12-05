@@ -112,5 +112,7 @@ class vMoodle_Controller
 		 */
 		if($cmd != NULL)
 			return $cmd->execute();
+
+		return true;
 	}
 }

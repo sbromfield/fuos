@@ -45,6 +45,8 @@ class listStudentVM_page implements Page
 			$this->displayHeader();
 			foreach($this->vms as $vm)
 			{
+				$cm = Cloud_Manager::getInstance();
+				$vm->state = $cm->getState($vm->id);
 				echo "<tr style='border-bottom: 1px solid #BBBBBB'>
 				<td style='padding: 10px'>{$vm->name}</td>
 				<td style='padding: 10px'>{$vm->state}</td>";

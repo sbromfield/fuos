@@ -18,9 +18,7 @@ class listVMAssignment_page implements Page
 	public $assignment;
 	
 	public function display() {
-		global $COURSE, $CFG, $SITE;
-
-		$assid = optional_param('assid', 0, PARAM_INT);
+		global $COURSE, $CFG, $SITE;				
 		
 		$meta = "<script type=\"text/javascript\" src=\"http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js\"></script>";
 		$meta .= "<script type=\"text/javascript\" src=\"http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.5/jquery-ui.min.js\"></script>";
@@ -61,6 +59,9 @@ class listVMAssignment_page implements Page
 	private function printVM($vm)
 	{
 		global $COURSE, $CFG;
+		
+		if($vm == NULL) return;
+		
 		echo "<tr style='border-bottom: 1px solid #BBBBBB'>
 		<td style='padding: 10px'>";
 		if(isset($vm->user))
@@ -94,7 +95,7 @@ class listVMAssignment_page implements Page
 		}
 		if(isset($vm->user))
 		{
-			echo "<td style='padding: 10px'><a href=\"{$CFG->wwwroot}/mod/assignment/submissions.php?id={$this->assignment->id}&userid={$vm->user->id}&mode=single&offset=0\" onClick=\"javascript:this.target='grade3'; return openpopup('/mod/assignment/submissions.php?id={$this->assignment->id}&amp;userid={$vm->user->id}&amp;mode=single&amp;offset=0', 'grade3', 'menubar=0,location=0,scrollbars,resizable,width=780,height=600', 0);\">Grade</a></td>";
+			echo "<td style='padding: 10px'><a href=\"{$CFG->wwwroot}/mod/assignment/submissions.php?id={$this->cm->id}&userid={$vm->user->id}&mode=single&offset=0\" onClick=\"javascript:this.target='grade3'; return openpopup('/mod/assignment/submissions.php?id={$this->cm->id}&amp;userid={$vm->user->id}&amp;mode=single&amp;offset=0', 'grade3', 'menubar=0,location=0,scrollbars,resizable,width=780,height=600', 0);\">Grade</a></td>";
 		}
 		echo "</tr>";
 	}

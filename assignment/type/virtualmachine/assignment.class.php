@@ -97,14 +97,22 @@ class assignment_virtualmachine extends assignment_base {
 		require_once('../../mod/virtualmachine/classes/dsFacade.class.php');
 		$ds = new dsFacade();
 
-		$UVA = $ds->selectUVA($USER->id, $this->assignment->id);
-		if(!$UVA)
+                $coursecontext = get_context_instance(CONTEXT_COURSE, $COURSE->id);
+
+                if(!has_capability('moodle/legacy:editingteacher', $coursecontext, $USER->id, false))
 		{
-			echo "<a href='{$CFG->wwwroot}/mod/virtualmachine/?a=createVMAssignment&id={$COURSE->id}&assid={$this->assignment->id}'>Create VM</a>";
-		}
-		else
-		{
-			echo "<a href='{$CFG->wwwroot}/mod/virtualmachine/?a=listVM&id={$COURSE->id}&vm={$UVA->vm_id}'>Go</a>";
+
+			$UVA = $ds->selectUVA($USER->id, $this->assignment->id);
+			if(!$UVA)
+			{
+				echo "<a href='{$CFG->wwwroot}/mod/virtualmachine/?a=createVMAssignment&id={$COURSE->id}&assid={$this->assignment->id}'>Create Virtual Machine</a>";
+			}
+			else
+			{
+				echo "<a href='{$CFG->wwwroot}/mod/virtualmachine/?a=listVM&id={$COURSE->id}&vm={$UVA->vm_id}'>Go</a>";
+			}
+		}else{
+			echo "<a href='{$CFG->wwwroot}/mod/virtualmachine/?a=listVM&id={$COURSE->id}&assid={$this->cm->id}'>View Assignment Virtual Machines</a>";
 		}
 		
 		echo "</center>";
@@ -124,17 +132,47 @@ class assignment_virtualmachine extends assignment_base {
     
     
 	/**
-	 * Stub
+	 * Display the header and top of a page
+	 *
+	 * (this doesn't change much for assignment types)
+	 * This is used by the view() method to print the header of view.php but
+	 * it can be used on other pages in which case the string to denote the
+	 * page in the navigation trail should be passed as an argument
+	 *
+	 * @param $subpage string Description of subpage to be used in navigation trail
 	 */
-	private function get_vm_templates()
-	{
-		return array( 	
-			'0' => 'Debian base system',
-			'1' => 'Debian base system with X11',
-			'2' => 'Windows XP',
-			'3' => 'Debian LAMP'
-		);
+	function view_header($subpage='') {
+
+		global $CFG;
+
+		$context = get_context_instance(CONTEXT_MODULE,$this->cm->id);
+
+		if ($subpage) {
+			$navigation = build_navigation($subpage, $this->cm);
+		} else {
+			$navigation = build_navigation('', $this->cm);
+		}
+
+		print_header($this->pagetitle, $this->course->fullname, $navigation, '', '',
+                     true, update_module_button($this->cm->id, $this->course->id, $this->strassignment),
+                     navmenu($this->course, $this->cm));
+
+		groups_print_activity_menu($this->cm, $CFG->wwwroot . '/mod/assignment/view.php?id=' . $this->cm->id);
+
+		echo '<div class="reportlink">';
+		if (has_capability('mod/assignment:grade', $context)) {
+			require_once('../../mod/virtualmachine/classes/dsFacade.class.php');
+			$ds = new dsFacade();
+			$UVAS = $ds->selectUVAByA($this->assignment->id);
+
+			echo '<a href="submissions.php?id=' . $this->cm->id . '">' . count($UVAS) . ' Student Virtual Machines have been created</a>';
+		}else{
+			echo 'Good Luck!';
+		}
+		echo '</div>';
+		echo '<div class="clearer"></div>';
 	}
-    
+
+ 
 }
 

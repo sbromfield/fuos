@@ -53,7 +53,8 @@ class block_virtualmachine extends block_base {
 		$context = get_context_instance(CONTEXT_COURSE,$COURSE->id); 
 		if(has_capability('moodle/legacy:editingteacher', $context, $USER->id, false))
 		{
-			$this->content->text   = "<a href=\"{$CFG->wwwroot}/mod/virtualmachine/index.php?a=listVM&id={$COURSE->id}\">My Vitual Machines</a><br />";
+			$this->content->text   = "<a href=\"{$CFG->wwwroot}/mod/virtualmachine/my_vms.php?id={$COURSE->id}\">My Vitual Machines</a><br />";
+			$this->content->text   .= '<a href="' . $CFG->wwwroot . '/mod/virtualmachine/">Student Virtual Machines</a><br />';
 		}
 
 		return $this->content;
