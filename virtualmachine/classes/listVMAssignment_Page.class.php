@@ -74,20 +74,20 @@ class listVMAssignment_page implements Page
 		<td style='padding: 10px'>{$vm->state}</td>";
 		if($vm->state != "RUNNING")
 		{
-			echo "<td style='padding: 10px'><a href=\"?a=startVM&assid={$this->assignment->id}&id={$COURSE->id}&vm={$vm->id}\">Start</a></td>";
+			echo "<td style='padding: 10px'><a href=\"?a=startVM&assid={$this->cm->id}&id={$COURSE->id}&vm={$vm->id}\">Start</a></td>";
 			echo "<td style='padding: 10px'>Stop</td>";
 			echo "<td style='padding: 10px'>View</td>";
 			
 			if($vm->isTemplate==0)
 			{
-				echo "<td style='padding: 10px'><a href=\"?a=deleteVM&assid={$this->assignment->id}&id={$COURSE->id}&vm={$vm->id}\">Delete</a></td>";
+				echo "<td style='padding: 10px'><a href=\"?a=deleteVM&assid={$this->cm->id}&id={$COURSE->id}&vm={$vm->id}\">Delete</a></td>";
 			}
 		}
 		else
 		{
 			echo "<td style='padding: 10px'>Start</td>";
-			echo "<td style='padding: 10px'><a id='stopBtn' vmname=\"{$vm->name}\" href=\"?a=stopVM&assid={$this->assignment->id}&id={$COURSE->id}&vm={$vm->id}\">Stop</a></td>";
-			echo "<td style='padding: 10px'><a href=\"?a=viewVM&assid={$this->assignment->id}&id={$COURSE->id}&vm={$vm->id}\">View</a></td>";
+			echo "<td style='padding: 10px'><a id='stopBtn' vmname=\"{$vm->name}\" href=\"?a=stopVM&assid={$this->cm->id}&id={$COURSE->id}&vm={$vm->id}\">Stop</a></td>";
+			echo "<td style='padding: 10px'><a href=\"?a=viewVM&assid={$this->cm->id}&id={$COURSE->id}&vm={$vm->id}\">View</a></td>";
 			if($vm->isTemplate==0)
 			{
 				echo "<td style='padding: 10px'>Delete</td>";
