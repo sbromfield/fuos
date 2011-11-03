@@ -1,0 +1,7 @@
+Web-based Virtual Learning Environment (VLE, e.g., Moodle, WebCT) has become a widely used and important platform for educators to conveniently create and deliver course materials through the Internet and for students to easily use these materials in an interactive online learning environment. Meanwhile, system virtual machines (VMs, e.g., VMware, VirtualBox) are also emerging as a valuable tool for creating self-contained and portable educational modules that can be transparently replicated and deployed anywhere. Therefore, the combination of these two technologies has the potential to provide an even more powerful education software system, a VM-based virtual learning environment.
+
+The fundamental goal of this senior project is to develop a VM-based VLE system that allows educators and students to seamlessly use VMs for creating and consuming course materials in an online learning environment. Specifically, this VLE system will be able to achieve the following objectives. First, it should allow an instructor to create and customize VMs as templates for homework assignments. Second, it should allow students to create their own copies of the VMs based on the instructor templates, use them for their assigned homework, and submit them after the homework is completed or before the homework's deadline. Third, it should allow these VMs to be used efficiently both in terms of their resource usage and user-perceived performance.
+
+
+Live demo at:
+http://visa.cs.fiu.edu/tiki/vMoodle
